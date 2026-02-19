@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earth360 Downloader</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c0f; --surface:#0e1419; --border:#1e2830;
+  --accent:#00e5ff; --text:#e8edf2; --muted:#5a6a78;
+  --success:#00ff88; --error:#ff4466; --warn:#ffb347; --purple:#b57aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:24px 16px 48px;overflow-x:hidden;}
+body::before{content:'';position:fixed;top:-30vh;left:50%;transform:translateX(-50%);
+  width:80vw;height:60vh;
+  background:radial-gradient(ellipse,rgba(0,229,255,.06) 0%,transparent 70%);
+  pointer-events:none;z-index:0;}
+header{width:100%;max-width:480px;text-align:center;margin-bottom:36px;position:relative;z-index:1;}
+.logo-ring{width:64px;height:64px;border-radius:50%;border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 20px;
+  animation:spin 20s linear infinite;position:relative;
+  box-shadow:0 0 24px rgba(0,229,255,.2),inset 0 0 24px rgba(0,229,255,.05);}
+.logo-ring::before{content:'';position:absolute;width:8px;height:8px;
+  background:var(--accent);border-radius:50%;top:-5px;left:50%;transform:translateX(-50%);}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.logo-inner{animation:spin 20s linear infinite reverse;font-size:24px;}
+h1{font-size:clamp(1.8rem,7vw,2.4rem);font-weight:800;letter-spacing:-.02em;line-height:1.1;}
+h1 span{color:var(--accent);}
+.tagline{font-family:'Space Mono',monospace;font-size:.7rem;color:var(--muted);
+  letter-spacing:.15em;text-transform:uppercase;margin-top:8px;}
+
+.card{width:100%;max-width:480px;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:24px;position:relative;z-index:1;}
+.field-label{font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block;}
+.input-wrap{position:relative;margin-bottom:16px;}
+textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:'Space Mono',monospace;font-size:.72rem;
+  padding:14px 44px 14px 14px;outline:none;resize:none;height:80px;
+  transition:border-color .2s,box-shadow .2s;line-height:1.5;}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
+.clear-btn{position:absolute;right:12px;top:14px;background:none;border:none;
+  color:var(--muted);cursor:pointer;font-size:1rem;padding:4px;transition:color .2s;}
+.clear-btn:hover{color:var(--text);}
+
+/* Badges */
+.badge{display:none;align-items:flex-start;gap:8px;border-radius:8px;
+  padding:10px 12px;margin-bottom:12px;font-family:'Space Mono',monospace;
+  font-size:.65rem;line-height:1.5;}
+.badge.active{display:flex;}
+.badge-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.badge-text{word-break:break-all;}
+.badge-sub{font-size:.6rem;display:block;margin-top:2px;}
+.badge-sv{background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);color:var(--accent);}
+.badge-sv .badge-dot{background:var(--accent);}
+.badge-sv .badge-sub{color:rgba(0,229,255,.5);}
+.badge-user{background:rgba(181,122,255,.07);border:1px solid rgba(181,122,255,.3);color:var(--purple);}
+.badge-user .badge-dot{background:var(--purple);}
+.badge-user .badge-sub{color:rgba(181,122,255,.6);}
+.badge-warn{background:rgba(255,179,71,.07);border:1px solid rgba(255,179,71,.2);color:var(--warn);}
+.badge-warn .badge-dot{background:var(--warn);}
+
+/* Maps redirect box — shown for Earth links without !6s token */
+.maps-box{display:none;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);
+  border-radius:10px;padding:14px;margin-bottom:16px;font-family:'Space Mono',monospace;font-size:.65rem;}
+.maps-box.active{display:block;}
+.maps-box-title{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.maps-box-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.open-maps-btn{flex:1;min-width:120px;background:var(--accent);color:#000;border:none;
+  border-radius:8px;font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;
+  padding:10px 12px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.open-maps-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);}
+.open-maps-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,229,255,.3);}
+.maps-link{flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(0,229,255,.3);border-radius:8px;color:var(--accent);
+  font-family:'Space Mono',monospace;font-size:.7rem;padding:10px 12px;
+  text-decoration:none;transition:all .2s;text-align:center;}
+.maps-link:hover{background:rgba(0,229,255,.07);border-color:var(--accent);}
+.maps-instruction{color:var(--muted);font-size:.62rem;line-height:1.6;}
+.maps-instruction strong{color:var(--warn);}
+
+/* Step 2 input — paste Maps URL back */
+.step2-wrap{display:none;margin-top:10px;}
+.step2-wrap.active{display:block;}
+.step2-label{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--warn);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:block;}
+.step2-input{width:100%;background:var(--bg);border:1px solid rgba(255,179,71,.3);
+  border-radius:8px;color:var(--text);font-family:'Space Mono',monospace;font-size:.7rem;
+  padding:10px 12px;outline:none;resize:none;height:64px;line-height:1.5;
+  transition:border-color .2s;}
+.step2-input:focus{border-color:var(--warn);box-shadow:0 0 0 3px rgba(255,179,71,.1);}
+
+/* Zoom */
+.zoom-wrap{margin-bottom:20px;transition:opacity .2s;}
+.zoom-wrap.hidden{opacity:.3;pointer-events:none;}
+.zoom-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.zoom-pill{flex:1;min-width:60px;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--muted);font-family:'Space Mono',monospace;
+  font-size:.7rem;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;}
+.zoom-pill:hover{border-color:var(--accent);color:var(--accent);}
+.zoom-pill.active{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);}
+.zoom-pill .res-label{display:block;font-size:.55rem;color:var(--muted);margin-top:2px;}
+.zoom-pill.active .res-label{color:rgba(0,229,255,.6);}
+
+.dl-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:10px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;padding:16px;
+  cursor:pointer;transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden;}
+.dl-btn.user-mode{background:var(--purple);}
+.dl-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);}
+.dl-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,229,255,.3);}
+.dl-btn.user-mode:hover{box-shadow:0 8px 24px rgba(181,122,255,.3);}
+.dl-btn:active{transform:translateY(0);}
+.dl-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.progress-section{margin-top:20px;display:none;}
+.progress-section.active{display:block;}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.progress-label{font-family:'Space Mono',monospace;font-size:.65rem;color:var(--muted);
+  letter-spacing:.08em;text-transform:uppercase;}
+.progress-pct{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--accent);font-weight:700;}
+.progress-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:12px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),rgba(0,229,255,.6));
+  border-radius:4px;transition:width .3s;width:0%;}
+.tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(24px,1fr));
+  gap:2px;max-height:90px;overflow:hidden;border-radius:6px;}
+.tile-cell{height:24px;border-radius:3px;background:var(--border);transition:background .2s;}
+.tile-cell.done{background:rgba(0,229,255,.4);}
+.tile-cell.fail{background:rgba(255,68,102,.4);}
+.tile-cell.loading{animation:pulse .6s ease-in-out infinite alternate;}
+@keyframes pulse{from{background:rgba(0,229,255,.1)}to{background:rgba(0,229,255,.3)}}
+
+.status-bar{margin-top:16px;padding:12px 14px;border-radius:8px;font-family:'Space Mono',monospace;
+  font-size:.68rem;line-height:1.6;white-space:pre-wrap;display:none;}
+.status-bar.active{display:block;}
+.status-bar.info{background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);color:var(--accent);}
+.status-bar.error{background:rgba(255,68,102,.07);border:1px solid rgba(255,68,102,.2);color:var(--error);}
+.status-bar.success{background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);color:var(--success);}
+.status-bar.warn{background:rgba(255,179,71,.07);border:1px solid rgba(255,179,71,.2);color:var(--warn);}
+
+.cancel-btn{width:100%;margin-top:10px;background:none;border:1px solid var(--border);
+  color:var(--muted);font-family:'Syne',sans-serif;font-size:.85rem;padding:12px;
+  border-radius:10px;cursor:pointer;transition:all .2s;display:none;}
+.cancel-btn.active{display:block;}
+.cancel-btn:hover{border-color:var(--error);color:var(--error);}
+
+.info-section{width:100%;max-width:480px;margin-top:20px;z-index:1;}
+.info-toggle{background:none;border:1px solid var(--border);color:var(--muted);
+  font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:10px 16px;border-radius:8px;cursor:pointer;width:100%;text-align:left;
+  transition:all .2s;display:flex;justify-content:space-between;align-items:center;}
+.info-toggle:hover{border-color:var(--muted);color:var(--text);}
+.info-body{background:var(--surface);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 8px 8px;padding:16px;display:none;font-family:'Space Mono',monospace;
+  font-size:.68rem;color:var(--muted);line-height:1.7;}
+.info-body.open{display:block;}
+.info-body strong{color:var(--text);}
+.info-body code{background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--accent);font-size:.65rem;}
+.tag-user{color:var(--purple);}
+.tag-sv{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-ring"><span class="logo-inner">🌍</span></div>
+  <h1>Earth<span>360</span></h1>
+  <p class="tagline">Street View · User Photos · Full-Res</p>
+</header>
+
+<div class="card">
+  <label class="field-label">Step 1 — Paste Google Earth / Maps / Street View URL</label>
+  <div class="input-wrap">
+    <textarea id="urlInput" placeholder="Paste any Google Maps, Street View, or earth.app.goo.gl link…"
+      autocomplete="off" autocorrect="off" spellcheck="false" oninput="onUrlChange()"></textarea>
+    <button class="clear-btn" onclick="clearAll()" title="Clear">✕</button>
+  </div>
+
+  <!-- Official SV badge -->
+  <div class="badge badge-sv" id="badgeSV">
+    <div class="badge-dot"></div>
+    <div>
+      <span class="badge-text" id="svPanoId"></span>
+      <span class="badge-sub" id="svSource"></span>
+    </div>
+  </div>
+
+  <!-- User-uploaded badge -->
+  <div class="badge badge-user" id="badgeUser">
+    <div class="badge-dot"></div>
+    <div>
+      <span class="badge-text" id="userPanoId"></span>
+      <span class="badge-sub" id="userSource"></span>
+    </div>
+  </div>
+
+  <!-- Coords-only badge -->
+  <div class="badge badge-warn" id="badgeCoords">
+    <div class="badge-dot"></div>
+    <div id="coordsText">Only coordinates found.</div>
+  </div>
+
+  <!-- Maps redirect box (shown when no !6s token available) -->
+  <div class="maps-box" id="mapsBox">
+    <div class="maps-box-title">&#x1F517; Open in Google Maps to get download URL</div>
+    <div class="maps-box-btns">
+      <button class="open-maps-btn" id="openMapsBtn" onclick="openInMaps()">&#x2197; Open in Maps</button>
+      <a class="maps-link" id="mapsLink" href="#" target="_blank" rel="noopener">Copy / Open Link</a>
+    </div>
+    <div class="maps-instruction">
+      <strong>After Maps loads:</strong> wait for Street View to fully open,
+      then copy the URL from the address bar and paste it below.
+    </div>
+    <div class="step2-wrap active" id="step2Wrap">
+      <label class="step2-label">Step 2 — Paste the Maps URL here</label>
+      <textarea class="step2-input" id="step2Input"
+        placeholder="https://www.google.com/maps/@…!6shttps:%2F%2Flh3.googleusercontent.com%2F…"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        oninput="onStep2Change()"></textarea>
+    </div>
+  </div>
+
+  <!-- Zoom (irrelevant for user uploads) -->
+  <div class="zoom-wrap" id="zoomWrap">
+    <label class="field-label">Resolution / Zoom
+      <span style="color:var(--muted);font-size:.55rem">(official Street View only)</span>
+    </label>
+    <div class="zoom-pills">
+      <button class="zoom-pill" data-zoom="1" onclick="selectZoom(this)">Z1<span class="res-label">512px</span></button>
+      <button class="zoom-pill" data-zoom="2" onclick="selectZoom(this)">Z2<span class="res-label">1K</span></button>
+      <button class="zoom-pill active" data-zoom="3" onclick="selectZoom(this)">Z3<span class="res-label">2K</span></button>
+      <button class="zoom-pill" data-zoom="4" onclick="selectZoom(this)">Z4<span class="res-label">4K</span></button>
+      <button class="zoom-pill" data-zoom="5" onclick="selectZoom(this)">Z5<span class="res-label">8K+</span></button>
+    </div>
+  </div>
+
+  <button class="dl-btn" id="dlBtn" onclick="startDownload()">&#x2B07; Download Full-Res Panorama</button>
+  <button class="cancel-btn" id="cancelBtn" onclick="cancelDownload()">&#x2715; Cancel</button>
+
+  <div class="progress-section" id="progressSection">
+    <div class="progress-header">
+      <span class="progress-label" id="progressLabel">Fetching tiles…</span>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="tile-grid" id="tileGrid"></div>
+  </div>
+
+  <div class="status-bar" id="statusBar"></div>
+</div>
+
+<div class="info-section">
+  <button class="info-toggle" onclick="toggleInfo()">
+    <span>How it works &amp; supported formats</span>
+    <span id="infoArrow">&#x25BE;</span>
+  </button>
+  <div class="info-body" id="infoBody">
+    <span class="tag-sv">&#x25A0; Official Google Street View</span><br>
+    Tiles stitched from <code>cbk0.google.com</code> then saved as JPEG with
+    <strong>Photo Sphere XMP</strong> injected — galleries open it in panorama mode.<br><br>
+
+    <span class="tag-user">&#x25A0; User-uploaded 360 photos</span> (<code>CI...</code> IDs)<br>
+    Fetched as a single image from <code>lh3.googleusercontent.com</code> with ALL
+    viewport params stripped so you get the raw equirectangular source, not a cropped perspective view.
+    Original XMP is preserved.<br><br>
+
+    <strong>Earth app links:</strong><br>
+    The app converts them to a Maps URL automatically and opens it.
+    After Maps loads, copy the URL and paste it in Step 2 — the <code>AF...</code> signed token
+    needed to fetch the image is embedded in that URL.<br><br>
+
+    <strong>CORS note:</strong> If fetch fails, run via <code>npx serve .</code>
+    or use the <em>CORS Unblock</em> extension.
+  </div>
+</div>
+
+<script>
+// ─── State ───
+let cancelRequested = false;
+let selectedZoom = 3;
+let currentDetection = null;
+let currentMapsUrl = null;
+
+const ZOOM_DIMS = {
+  1:{cols:2, rows:1}, 2:{cols:4, rows:2}, 3:{cols:8, rows:4},
+  4:{cols:16,rows:8}, 5:{cols:26,rows:13}
+};
+const TILE_SIZE = 512;
+
+// ─── Protobuf decoder ───
+function readVarint(b, p) {
+  let r=0, s=0;
+  while(p<b.length){const v=b[p++];r|=(v&127)<<s;s+=7;if(!(v&128))break;}
+  return {value:r,pos:p};
+}
+function parseProto(bytes) {
+  const out=[];let p=0;
+  while(p<bytes.length){
+    try{
+      const t=readVarint(bytes,p);p=t.pos;if(p>=bytes.length)break;
+      const wt=t.value&7,fn=t.value>>3;
+      if(wt===0){const v=readVarint(bytes,p);p=v.pos;out.push({field:fn,type:'varint',value:v.value});}
+      else if(wt===2){
+        const l=readVarint(bytes,p);p=l.pos;
+        const d=bytes.slice(p,p+l.value);p+=l.value;
+        let s='';try{s=new TextDecoder('utf-8',{fatal:true}).decode(d);}catch(e){}
+        out.push({field:fn,type:'bytes',data:d,str:s});
+      }else if(wt===5){p+=4;}else if(wt===1){p+=8;}else break;
+    }catch(e){break;}
+  }
+  return out;
+}
+function isPanoId(s) {
+  if(!s||typeof s!=='string')return false;
+  s=s.trim();
+  if(/^[A-Za-z0-9_\-]{22}$/.test(s))return true;
+  if(/^CI[A-Za-z0-9_\-]{18,32}$/.test(s))return true;
+  if(/^AF1Q[A-Za-z0-9_\-]{36,}$/.test(s))return true;
+  if(/^CAoS[A-Za-z0-9+\/=]{16,}$/.test(s))return true;
+  return false;
+}
+function isUserPanoId(s) {
+  return /^CI[A-Za-z0-9_\-]{18,32}$/.test(s)||/^AF1Q[A-Za-z0-9_\-]{36,}$/.test(s);
+}
+function findPanoInBytes(bytes,depth) {
+  if(!depth)depth=0;if(depth>8)return null;
+  for(const e of parseProto(bytes)){
+    if(e.type==='bytes'){
+      if(e.str&&isPanoId(e.str))return e.str;
+      const n=findPanoInBytes(e.data,depth+1);if(n)return n;
+    }
+  }
+  return null;
+}
+function tryB64Pano(b64) {
+  let s=b64.replace(/-/g,'+').replace(/_/g,'/');
+  s+='='.repeat((4-s.length%4)%4);
+  try{return findPanoInBytes(Uint8Array.from(atob(s),c=>c.charCodeAt(0)));}
+  catch(e){return null;}
+}
+
+// ─── Nav extraction helper ───
+function extractNav(url) {
+  const cm=url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  const hm=url.match(/([\d.]+)h[,\/]/);
+  const tm=url.match(/([\d.]+)t[,\/]/);
+  return {
+    coords: cm?{lat:parseFloat(cm[1]),lng:parseFloat(cm[2])}:null,
+    heading: hm?parseFloat(hm[1]):0,
+    tilt: tm?parseFloat(tm[1]):90
+  };
+}
+
+// ─── Clean lh3 URL — strip viewport params, maximise resolution ───
+function cleanLh3Url(raw) {
+  // Remove everything after the = sign and rebuild cleanly
+  // Pattern: https://lh3.../path=w900-h600-k-no-pi49...-ya332...-ro0-fo100
+  // We want:  https://lh3.../path=w16000-h8000-k-no
+  let url = raw;
+  // Replace the entire size+params suffix
+  url = url.replace(/=w\d+[^"'\s]*/,'=w16000-h8000-k-no');
+  // Belt-and-suspenders: strip any remaining viewport params
+  url = url.replace(/-pi[\d.\-]+/g,'').replace(/-ya[\d.\-]+/g,'')
+           .replace(/-ro[\d.\-]+/g,'').replace(/-fo\d+/g,'');
+  return url;
+}
+
+// ─── Build Google Maps Street View URL ───
+function buildMapsUrl(det) {
+  if(!det)return null;
+  const lat=(det.coords&&det.coords.lat)||0;
+  const lng=(det.coords&&det.coords.lng)||0;
+  const h=((det.heading)||0).toFixed(2);
+  const t=((det.tilt)||90).toFixed(2);
+  const id=det.panoId;
+  if(id&&isUserPanoId(id))
+    return 'https://www.google.com/maps/@'+lat+','+lng+',3a,75y,'+h+'h,'+t+'t/data=!3m6!1e1!3m4!1s'+encodeURIComponent(id)+'!2e10!7i8000!8i4000';
+  if(id)
+    return 'https://www.google.com/maps/@'+lat+','+lng+',3a,75y,'+h+'h,'+t+'t/data=!3m4!1e1!3m2!1s'+encodeURIComponent(id)+'!2e0';
+  return 'https://www.google.com/maps/@'+lat+','+lng+',3a,75y,'+h+'h,'+t+'t';
+}
+
+// ─── Main URL extraction ───
+function extractFromUrl(raw) {
+  const url=raw.trim();
+  if(!url)return null;
+
+  // 1. Bare pano ID
+  if(isPanoId(url))return{panoId:url,panoType:isUserPanoId(url)?'user':'sv',source:'Direct pano ID'};
+
+  // 2. Unwrap earth.app.goo.gl
+  const lm=url.match(/[?&]link=([^&\s]+)/i);
+  const workUrl=lm?decodeURIComponent(lm[1]):url;
+  const nav=extractNav(workUrl);
+
+  // 3. Source type (!2e0=official, !2e10/11=user)
+  const stm=workUrl.match(/!2e(\d+)/);
+  const isUser=(stm&&parseInt(stm[1])>=10);
+
+  // 4. Extract !6s lh3 URL and clean it
+  let lh3Url=null;
+  const lh3m=workUrl.match(/!6s(https?:[^!]+lh3\.googleusercontent\.com[^!]+)/);
+  if(lh3m){
+    let raw='';
+    try{raw=decodeURIComponent(lh3m[1]);}catch(e){raw=lh3m[1];}
+    lh3Url=cleanLh3Url(raw);
+  }
+
+  // 5. !1s pano ID
+  const bm=workUrl.match(/!1s([^!&?#\s]+)/);
+  if(bm){
+    const id=decodeURIComponent(bm[1]);
+    if(isPanoId(id)){
+      const pt=isUser||isUserPanoId(id)?'user':'sv';
+      return{panoId:id,panoType:pt,lh3Url,...nav,source:'Google Maps !1s'};
+    }
+  }
+
+  // 6. panoid= param
+  const pm=workUrl.match(/[?&]panoid=([^&\s]+)/i);
+  if(pm&&isPanoId(pm[1]))
+    return{panoId:pm[1],panoType:isUserPanoId(pm[1])?'user':'sv',...nav,source:'panoid= param'};
+
+  // 7. /p/ path
+  const pp=workUrl.match(/\/p\/([A-Za-z0-9_\-]{20,})/);
+  if(pp&&isPanoId(pp[1]))
+    return{panoId:pp[1],panoType:'user',...nav,source:'/p/ path'};
+
+  // 8. Protobuf from data=
+  const dm=workUrl.match(/[?\/]data=([A-Za-z0-9+\/=%_\-]+)/);
+  if(dm){
+    let ds=dm[1];try{ds=decodeURIComponent(ds);}catch(e){}
+    const chunks=ds.split(/[^A-Za-z0-9+\/=_\-]/).filter(c=>c.length>=8);
+    for(const c of chunks){
+      if(isPanoId(c))return{panoId:c,panoType:isUserPanoId(c)?'user':'sv',...nav,source:'data= raw'};
+      const f=tryB64Pano(c);
+      if(f)return{panoId:f,panoType:isUserPanoId(f)?'user':'sv',...nav,source:'Earth protobuf'};
+    }
+    const wf=tryB64Pano(ds);
+    if(wf)return{panoId:wf,panoType:isUserPanoId(wf)?'user':'sv',...nav,source:'Earth protobuf (full)'};
+  }
+
+  // 9. Coords only
+  if(nav.coords)return{panoId:null,panoType:null,...nav,source:'Coordinates only'};
+  return null;
+}
+
+// ─── Photo Sphere XMP injection ───
+function injectXMP(jpegBytes,w,h) {
+  const xmpXml=
+    '<?xpacket begin="\xEF\xBB\xBF" id="W5M0MpCehiHzreSzNTczkc9d"?>'+
+    '<x:xmpmeta xmlns:x="adobe:ns:meta/">'+
+    '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'+
+    '<rdf:Description rdf:about=""'+
+    ' xmlns:GPano="http://ns.google.com/photos/1.0/panorama/"'+
+    ' GPano:UsePanoramaViewer="True"'+
+    ' GPano:ProjectionType="equirectangular"'+
+    ' GPano:PoseHeadingDegrees="0"'+
+    ' GPano:InitialViewHeadingDegrees="0"'+
+    ' GPano:InitialViewPitchDegrees="0"'+
+    ' GPano:InitialViewRollDegrees="0"'+
+    ' GPano:FullPanoWidthPixels="'+w+'"'+
+    ' GPano:FullPanoHeightPixels="'+h+'"'+
+    ' GPano:CroppedAreaImageWidthPixels="'+w+'"'+
+    ' GPano:CroppedAreaImageHeightPixels="'+h+'"'+
+    ' GPano:CroppedAreaLeftPixels="0"'+
+    ' GPano:CroppedAreaTopPixels="0"'+
+    '/>'+
+    '</rdf:RDF></x:xmpmeta>'+
+    '<?xpacket end="w"?>';
+  const ns='http://ns.adobe.com/xap/1.0/\x00';
+  const full=ns+xmpXml;
+  const xb=new Uint8Array(full.length);
+  for(let i=0;i<full.length;i++)xb[i]=full.charCodeAt(i)&0xFF;
+  const mlen=xb.length+2;
+  const app1=new Uint8Array(4+xb.length);
+  app1[0]=0xFF;app1[1]=0xE1;app1[2]=(mlen>>8)&0xFF;app1[3]=mlen&0xFF;
+  app1.set(xb,4);
+  const out=new Uint8Array(2+app1.length+jpegBytes.length-2);
+  out.set(jpegBytes.slice(0,2),0);
+  out.set(app1,2);
+  out.set(jpegBytes.slice(2),2+app1.length);
+  return out;
+}
+
+async function canvasToJpegBytes(canvas,q) {
+  return new Promise((res,rej)=>{
+    canvas.toBlob(b=>{
+      if(!b){rej(new Error('toBlob failed'));return;}
+      b.arrayBuffer().then(buf=>res(new Uint8Array(buf))).catch(rej);
+    },'image/jpeg',q||0.95);
+  });
+}
+
+function downloadBytes(bytes,name,mime) {
+  const blob=new Blob([bytes],{type:mime||'image/jpeg'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+
+function loadImgFromBytes(bytes) {
+  return new Promise((res,rej)=>{
+    const blob=new Blob([bytes],{type:'image/jpeg'});
+    const u=URL.createObjectURL(blob);
+    const img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(u);res(img);};
+    img.onerror=()=>{URL.revokeObjectURL(u);rej();};
+    img.src=u;
+  });
+}
+
+// ─── Download path A: User-uploaded (single lh3 image) ───
+async function downloadUserPano(det) {
+  const {panoId,lh3Url}=det;
+  const tryUrls=[];
+  if(lh3Url)tryUrls.push({url:lh3Url,label:'direct lh3 (full-res)'});
+  // gpms-cs-s path for CIHM type IDs — these need the AF token so only work if lh3Url present
+  // Fallback to /p/ path for regular CI IDs
+  tryUrls.push({url:'https://lh3.googleusercontent.com/p/'+encodeURIComponent(panoId)+'=w16000-h8000-k-no',label:'lh3/p/ max'});
+  tryUrls.push({url:'https://lh3.googleusercontent.com/p/'+encodeURIComponent(panoId)+'=w8000-h4000-k-no',label:'lh3/p/ 8K'});
+
+  for(const {url,label} of tryUrls){
+    setStatus('Fetching: '+label+'…','info');
+    try{
+      const resp=await fetch(url);
+      if(!resp.ok)continue;
+      const bytes=new Uint8Array(await resp.arrayBuffer());
+      const header=new TextDecoder('latin1').decode(bytes.slice(0,65536));
+      const hasGPano=header.includes('GPano')||header.includes('PhotoSphere');
+      const fname='earth360_user_'+panoId.slice(0,20)+'.jpg';
+      if(hasGPano){
+        setStatus('Original has Photo Sphere XMP — saving as-is.\n'+fname,'success');
+        downloadBytes(bytes,fname,'image/jpeg');
+      } else {
+        setStatus('Injecting Photo Sphere XMP…','info');
+        const img=await loadImgFromBytes(bytes);
+        const xb=injectXMP(bytes,img.naturalWidth,img.naturalHeight);
+        setStatus('Saved: '+fname+'\n'+img.naturalWidth+'x'+img.naturalHeight+'px · XMP injected','success');
+        downloadBytes(xb,fname,'image/jpeg');
+      }
+      return true;
+    }catch(e){continue;}
+  }
+  return false;
+}
+
+// ─── Download path B: Official Street View tile stitch ───
+async function downloadSVPano(det) {
+  const {panoId}=det;
+  const zoom=selectedZoom;
+  const {cols,rows}=ZOOM_DIMS[zoom];
+  const total=cols*rows;
+
+  document.getElementById('dlBtn').disabled=true;
+  document.getElementById('cancelBtn').classList.add('active');
+  document.getElementById('progressSection').classList.add('active');
+  document.getElementById('progressLabel').textContent='Fetching '+total+' tiles (Z'+zoom+')…';
+  updateProgress(0,total);
+
+  const grid=document.getElementById('tileGrid');grid.innerHTML='';
+  const cells=[];
+  for(let i=0;i<total;i++){const c=document.createElement('div');c.className='tile-cell';grid.appendChild(c);cells.push(c);}
+
+  setStatus('Pano: '+panoId+'\nZ'+zoom+' · '+cols+'x'+rows+' · '+cols*TILE_SIZE+'x'+rows*TILE_SIZE+'px','info');
+
+  const canvas=document.createElement('canvas');
+  canvas.width=cols*TILE_SIZE;canvas.height=rows*TILE_SIZE;
+  const ctx=canvas.getContext('2d');
+  let done=0,failed=0,idx=0;
+
+  async function worker(){
+    while(idx<total&&!cancelRequested){
+      const i=idx++;const x=i%cols,y=Math.floor(i/cols);
+      cells[i].className='tile-cell loading';
+      const url='https://cbk0.google.com/cbk?output=tile&panoid='+encodeURIComponent(panoId)+'&zoom='+zoom+'&x='+x+'&y='+y;
+      const res=await new Promise(resolve=>{
+        const img=new Image();img.crossOrigin='anonymous';
+        img.onload=()=>resolve({ok:true,img});img.onerror=()=>resolve({ok:false});img.src=url;
+      });
+      if(cancelRequested)break;
+      if(res.ok){ctx.drawImage(res.img,x*TILE_SIZE,y*TILE_SIZE,TILE_SIZE,TILE_SIZE);cells[i].className='tile-cell done';}
+      else{cells[i].className='tile-cell fail';failed++;}
+      done++;updateProgress(done,total);
+      document.getElementById('progressLabel').textContent=done+'/'+total+' tiles · '+failed+' failed';
+    }
+  }
+  await Promise.all(Array.from({length:8},()=>worker()));
+  if(cancelRequested)return;
+
+  document.getElementById('dlBtn').disabled=false;
+  document.getElementById('cancelBtn').classList.remove('active');
+
+  if(failed===total){
+    setStatus('All tiles failed.\n• CORS — use CORS Unblock extension or run via local server\n• Pano may be private\n• Try lower zoom','error');
+    return;
+  }
+
+  setStatus('Stitching done. Injecting XMP…','success');
+  const w=canvas.width,h=canvas.height;
+  const fname='earth360_sv_'+panoId.slice(0,20)+'_z'+zoom+'.jpg';
+  try{
+    const jb=await canvasToJpegBytes(canvas,0.96);
+    const xb=injectXMP(jb,w,h);
+    downloadBytes(xb,fname,'image/jpeg');
+    setStatus('Saved: '+fname+'\n'+w+'x'+h+'px · '+(total-failed)+'/'+total+' tiles · XMP injected','success');
+  }catch(e){
+    try{
+      const du=canvas.toDataURL('image/jpeg',0.96);
+      const a=document.createElement('a');a.href=du;a.download=fname;a.click();
+      setStatus('Saved (CORS mode — XMP not injected).\n'+w+'x'+h+'px','warn');
+    }catch(e2){
+      setStatus('Export blocked by CORS.\nRun via: npx serve .','error');
+    }
+  }
+}
+
+// ─── UI ───
+function selectZoom(el){
+  document.querySelectorAll('.zoom-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');selectedZoom=parseInt(el.dataset.zoom);
+}
+
+function setStatus(msg,type){
+  const b=document.getElementById('statusBar');
+  b.textContent=msg;b.className='status-bar active '+(type||'info');
+}
+function hideStatus(){document.getElementById('statusBar').className='status-bar';}
+
+function toggleInfo(){
+  const b=document.getElementById('infoBody');b.classList.toggle('open');
+  document.getElementById('infoArrow').textContent=b.classList.contains('open')?'\u25B4':'\u25BE';
+}
+
+function updateProgress(done,total){
+  const p=Math.round(done/total*100);
+  document.getElementById('progressFill').style.width=p+'%';
+  document.getElementById('progressPct').textContent=p+'%';
+}
+
+function cancelDownload(){
+  cancelRequested=true;setStatus('Cancelled.','error');
+  document.getElementById('dlBtn').disabled=false;
+  document.getElementById('cancelBtn').classList.remove('active');
+  document.getElementById('progressSection').classList.remove('active');
+}
+
+function clearAll(){
+  document.getElementById('urlInput').value='';
+  document.getElementById('step2Input').value='';
+  document.getElementById('urlInput').focus();
+  currentDetection=null;currentMapsUrl=null;
+  ['badgeSV','badgeUser','badgeCoords','mapsBox','progressSection'].forEach(id=>
+    document.getElementById(id).classList.remove('active'));
+  document.getElementById('zoomWrap').classList.remove('hidden');
+  const btn=document.getElementById('dlBtn');
+  btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Full-Res Panorama';btn.disabled=false;
+  hideStatus();
+}
+
+function showMapsBox(det){
+  const url=buildMapsUrl(det);
+  if(!url)return;
+  currentMapsUrl=url;
+  document.getElementById('mapsLink').href=url;
+  document.getElementById('mapsBox').classList.add('active');
+}
+
+function openInMaps(){
+  if(!currentMapsUrl)return;
+  const w=window.open(currentMapsUrl,'_blank');
+  if(!w)setStatus('Popup blocked — use the "Copy / Open Link" button instead.','warn');
+}
+
+// When user pastes Maps URL into Step 2 input
+function onStep2Change(){
+  const val=document.getElementById('step2Input').value.trim();
+  if(!val)return;
+  const result=extractFromUrl(val);
+  if(!result){setStatus('Could not parse this Maps URL. Make sure you copied the full address bar URL after Street View loaded.','error');return;}
+  if(result.lh3Url){
+    currentDetection=result;
+    setStatus('Got it! lh3 token found. Press Download to fetch the full-res image.','success');
+    const btn=document.getElementById('dlBtn');
+    btn.classList.add('user-mode');
+    btn.textContent='\u2B07 Download User Panorama (Full-Res)';
+  } else if(result.panoId&&result.panoType==='sv'){
+    currentDetection=result;
+    setStatus('Official Street View pano detected from Maps URL.','info');
+    document.getElementById('zoomWrap').classList.remove('hidden');
+    const btn=document.getElementById('dlBtn');
+    btn.classList.remove('user-mode');
+    btn.textContent='\u2B07 Download Panorama (Tile Stitch + XMP)';
+  } else {
+    setStatus('Pasted URL found pano ID but no direct image token yet. Try waiting for Street View to fully load in Maps before copying the URL.','warn');
+  }
+}
+
+function onUrlChange(){
+  const val=document.getElementById('urlInput').value;
+  ['badgeSV','badgeUser','badgeCoords','mapsBox'].forEach(id=>
+    document.getElementById(id).classList.remove('active'));
+  hideStatus();currentDetection=null;currentMapsUrl=null;
+
+  if(!val.trim()){
+    document.getElementById('zoomWrap').classList.remove('hidden');
+    const btn=document.getElementById('dlBtn');
+    btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Full-Res Panorama';
+    return;
+  }
+
+  const result=extractFromUrl(val);
+  if(!result)return;
+
+  if(result.panoId&&result.panoType==='sv'){
+    currentDetection=result;
+    document.getElementById('svPanoId').textContent=result.panoId;
+    document.getElementById('svSource').textContent='\u2937 Official Street View \xB7 '+result.source;
+    document.getElementById('badgeSV').classList.add('active');
+    document.getElementById('zoomWrap').classList.remove('hidden');
+    const btn=document.getElementById('dlBtn');
+    btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama (Tile Stitch + XMP)';
+
+  } else if(result.panoId&&result.panoType==='user'){
+    currentDetection=result;
+    document.getElementById('userPanoId').textContent=result.panoId;
+    const hasToken=!!result.lh3Url;
+    document.getElementById('userSource').textContent=
+      '\u2937 User-uploaded 360\xB0 \xB7 '+result.source+
+      (hasToken?' \xB7 \u2713 direct URL found':' \xB7 \u26A0 no AF token \u2014 use Maps step below');
+    document.getElementById('badgeUser').classList.add('active');
+    document.getElementById('zoomWrap').classList.add('hidden');
+    const btn=document.getElementById('dlBtn');
+    btn.classList.add('user-mode');btn.textContent='\u2B07 Download User Panorama (Full-Res)';
+    // If no lh3 token, show the Maps redirect box
+    if(!hasToken)showMapsBox(result);
+
+  } else if(!result.panoId&&result.coords){
+    document.getElementById('coordsText').textContent=
+      '\u26A0 Only coordinates ('+result.coords.lat.toFixed(5)+', '+result.coords.lng.toFixed(5)+
+      ') \u2014 showing Maps link below to enter Street View.';
+    document.getElementById('badgeCoords').classList.add('active');
+    showMapsBox(result);
+  }
+}
+
+async function startDownload(){
+  const urlVal=document.getElementById('urlInput').value.trim();
+  if(!urlVal){setStatus('Please paste a URL first.','error');return;}
+
+  if(!currentDetection){
+    const r=extractFromUrl(urlVal);
+    if(!r||!r.panoId){setStatus('Could not extract a pano ID. See info below.','error');return;}
+    currentDetection=r;
+  }
+
+  if(!currentDetection.panoId){
+    setStatus('No pano ID yet \u2014 use the Maps link below to open Street View, then paste the URL in Step 2.','warn');
+    return;
+  }
+
+  cancelRequested=false;
+  document.getElementById('progressSection').classList.remove('active');
+
+  if(currentDetection.panoType==='user'){
+    document.getElementById('dlBtn').disabled=true;
+    const ok=await downloadUserPano(currentDetection);
+    document.getElementById('dlBtn').disabled=false;
+    if(!ok){
+      // No lh3 token or CORS blocked — show Maps box if not already shown
+      showMapsBox(currentDetection);
+      setStatus(
+        'Could not fetch directly.\n\n'+
+        'For CIHM... panos the signed AF token is required.\n'+
+        '1. Use the "Open in Maps" button above\n'+
+        '2. Wait for Street View to load fully\n'+
+        '3. Copy the full URL from the address bar\n'+
+        '4. Paste it in the Step 2 field',
+        'warn'
+      );
+    }
+  } else {
+    await downloadSVPano(currentDetection);
+  }
+}
+
+document.getElementById('urlInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();startDownload();}
+});
+document.getElementById('step2Input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();startDownload();}
+});
+</script>
+</body>
+</html>

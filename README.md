@@ -2,7 +2,7 @@
 
 A single-file, client-side tool for downloading full-resolution Google Street View and user-uploaded 360° panoramas with proper **Photo Sphere XMP metadata** — so they open in panorama mode in any gallery app.
 
-**[Try it live](https://earth360.vercel.app)**
+**[Try it live](https://google-pano-downloader.vercel.app/)**
 
 ---
 

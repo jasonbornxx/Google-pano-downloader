@@ -64,7 +64,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
 .badge-warn{background:rgba(255,179,71,.07);border:1px solid rgba(255,179,71,.2);color:var(--warn);}
 .badge-warn .badge-dot{background:var(--warn);}
 
-/* Maps redirect box — shown for Earth links without !6s token */
+/* Maps redirect box */
 .maps-box{display:none;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);
   border-radius:10px;padding:14px;margin-bottom:16px;font-family:'Space Mono',monospace;font-size:.65rem;}
 .maps-box.active{display:block;}
@@ -83,7 +83,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
 .maps-instruction{color:var(--muted);font-size:.62rem;line-height:1.6;}
 .maps-instruction strong{color:var(--warn);}
 
-/* Step 2 input — paste Maps URL back */
+/* Step 2 input */
 .step2-wrap{display:none;margin-top:10px;}
 .step2-wrap.active{display:block;}
 .step2-label{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--warn);
@@ -94,21 +94,9 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
   transition:border-color .2s;}
 .step2-input:focus{border-color:var(--warn);box-shadow:0 0 0 3px rgba(255,179,71,.1);}
 
-/* Zoom */
-.zoom-wrap{margin-bottom:20px;transition:opacity .2s;}
-.zoom-wrap.hidden{opacity:.3;pointer-events:none;}
-.zoom-pills{display:flex;gap:8px;flex-wrap:wrap;}
-.zoom-pill{flex:1;min-width:60px;background:var(--bg);border:1px solid var(--border);
-  border-radius:8px;color:var(--muted);font-family:'Space Mono',monospace;
-  font-size:.7rem;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;}
-.zoom-pill:hover{border-color:var(--accent);color:var(--accent);}
-.zoom-pill.active{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);}
-.zoom-pill .res-label{display:block;font-size:.55rem;color:var(--muted);margin-top:2px;}
-.zoom-pill.active .res-label{color:rgba(0,229,255,.6);}
-
 .dl-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:10px;
   font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;padding:16px;
-  cursor:pointer;transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden;}
+  cursor:pointer;transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden; margin-top:10px;}
 .dl-btn.user-mode{background:var(--purple);}
 .dl-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);}
 .dl-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,229,255,.3);}
@@ -179,7 +167,6 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
     <button class="clear-btn" onclick="clearAll()" title="Clear">✕</button>
   </div>
 
-  <!-- Official SV badge -->
   <div class="badge badge-sv" id="badgeSV">
     <div class="badge-dot"></div>
     <div>
@@ -188,7 +175,6 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
     </div>
   </div>
 
-  <!-- User-uploaded badge -->
   <div class="badge badge-user" id="badgeUser">
     <div class="badge-dot"></div>
     <div>
@@ -197,13 +183,11 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
     </div>
   </div>
 
-  <!-- Coords-only badge -->
   <div class="badge badge-warn" id="badgeCoords">
     <div class="badge-dot"></div>
     <div id="coordsText">Only coordinates found.</div>
   </div>
 
-  <!-- Maps redirect box (shown when no !6s token available) -->
   <div class="maps-box" id="mapsBox">
     <div class="maps-box-title">&#x1F517; Open in Google Maps to get download URL</div>
     <div class="maps-box-btns">
@@ -223,21 +207,7 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
     </div>
   </div>
 
-  <!-- Zoom (irrelevant for user uploads) -->
-  <div class="zoom-wrap" id="zoomWrap">
-    <label class="field-label">Resolution / Zoom
-      <span style="color:var(--muted);font-size:.55rem">(official Street View only)</span>
-    </label>
-    <div class="zoom-pills">
-      <button class="zoom-pill" data-zoom="1" onclick="selectZoom(this)">Z1<span class="res-label">512px</span></button>
-      <button class="zoom-pill" data-zoom="2" onclick="selectZoom(this)">Z2<span class="res-label">1K</span></button>
-      <button class="zoom-pill active" data-zoom="3" onclick="selectZoom(this)">Z3<span class="res-label">2K</span></button>
-      <button class="zoom-pill" data-zoom="4" onclick="selectZoom(this)">Z4<span class="res-label">4K</span></button>
-      <button class="zoom-pill" data-zoom="5" onclick="selectZoom(this)">Z5<span class="res-label">8K+</span></button>
-    </div>
-  </div>
-
-  <button class="dl-btn" id="dlBtn" onclick="startDownload()">&#x2B07; Download Full-Res Panorama</button>
+  <button class="dl-btn" id="dlBtn" onclick="startDownload()">&#x2B07; Download Panorama</button>
   <button class="cancel-btn" id="cancelBtn" onclick="cancelDownload()">&#x2715; Cancel</button>
 
   <div class="progress-section" id="progressSection">
@@ -259,13 +229,11 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
   </button>
   <div class="info-body" id="infoBody">
     <span class="tag-sv">&#x25A0; Official Google Street View</span><br>
-    Tiles stitched from <code>cbk0.google.com</code> then saved as JPEG with
-    <strong>Photo Sphere XMP</strong> injected — galleries open it in panorama mode.<br><br>
+    Tiles automatically fetched at <strong>maximum available resolution (up to 8K)</strong> from <code>streetviewpixels-pa.googleapis.com</code>, stitched, and saved with <strong>Photo Sphere XMP + Binary GPS Location</strong> injected.<br><br>
 
     <span class="tag-user">&#x25A0; User-uploaded 360 photos</span> (<code>CI...</code> IDs)<br>
-    Fetched as a single image from <code>lh3.googleusercontent.com</code> with ALL
-    viewport params stripped so you get the raw equirectangular source, not a cropped perspective view.
-    Original XMP is preserved.<br><br>
+    Fetched directly as a single full-res image from <code>lh3.googleusercontent.com</code> with ALL
+    viewport params stripped. Binary GPS Location & Original XMP is preserved.<br><br>
 
     <strong>Earth app links:</strong><br>
     The app converts them to a Maps URL automatically and opens it.
@@ -280,7 +248,6 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
 <script>
 // ─── State ───
 let cancelRequested = false;
-let selectedZoom = 3;
 let currentDetection = null;
 let currentMapsUrl = null;
 
@@ -342,7 +309,6 @@ function tryB64Pano(b64) {
   catch(e){return null;}
 }
 
-// ─── Nav extraction helper ───
 function extractNav(url) {
   const cm=url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   const hm=url.match(/([\d.]+)h[,\/]/);
@@ -354,21 +320,14 @@ function extractNav(url) {
   };
 }
 
-// ─── Clean lh3 URL — strip viewport params, maximise resolution ───
 function cleanLh3Url(raw) {
-  // Remove everything after the = sign and rebuild cleanly
-  // Pattern: https://lh3.../path=w900-h600-k-no-pi49...-ya332...-ro0-fo100
-  // We want:  https://lh3.../path=w16000-h8000-k-no
   let url = raw;
-  // Replace the entire size+params suffix
   url = url.replace(/=w\d+[^"'\s]*/,'=w16000-h8000-k-no');
-  // Belt-and-suspenders: strip any remaining viewport params
   url = url.replace(/-pi[\d.\-]+/g,'').replace(/-ya[\d.\-]+/g,'')
            .replace(/-ro[\d.\-]+/g,'').replace(/-fo\d+/g,'');
   return url;
 }
 
-// ─── Build Google Maps Street View URL ───
 function buildMapsUrl(det) {
   if(!det)return null;
   const lat=(det.coords&&det.coords.lat)||0;
@@ -383,24 +342,19 @@ function buildMapsUrl(det) {
   return 'https://www.google.com/maps/@'+lat+','+lng+',3a,75y,'+h+'h,'+t+'t';
 }
 
-// ─── Main URL extraction ───
 function extractFromUrl(raw) {
   const url=raw.trim();
   if(!url)return null;
 
-  // 1. Bare pano ID
   if(isPanoId(url))return{panoId:url,panoType:isUserPanoId(url)?'user':'sv',source:'Direct pano ID'};
 
-  // 2. Unwrap earth.app.goo.gl
   const lm=url.match(/[?&]link=([^&\s]+)/i);
   const workUrl=lm?decodeURIComponent(lm[1]):url;
   const nav=extractNav(workUrl);
 
-  // 3. Source type (!2e0=official, !2e10/11=user)
   const stm=workUrl.match(/!2e(\d+)/);
   const isUser=(stm&&parseInt(stm[1])>=10);
 
-  // 4. Extract !6s lh3 URL and clean it
   let lh3Url=null;
   const lh3m=workUrl.match(/!6s(https?:[^!]+lh3\.googleusercontent\.com[^!]+)/);
   if(lh3m){
@@ -409,7 +363,6 @@ function extractFromUrl(raw) {
     lh3Url=cleanLh3Url(raw);
   }
 
-  // 5. !1s pano ID
   const bm=workUrl.match(/!1s([^!&?#\s]+)/);
   if(bm){
     const id=decodeURIComponent(bm[1]);
@@ -419,17 +372,14 @@ function extractFromUrl(raw) {
     }
   }
 
-  // 6. panoid= param
   const pm=workUrl.match(/[?&]panoid=([^&\s]+)/i);
   if(pm&&isPanoId(pm[1]))
     return{panoId:pm[1],panoType:isUserPanoId(pm[1])?'user':'sv',...nav,source:'panoid= param'};
 
-  // 7. /p/ path
   const pp=workUrl.match(/\/p\/([A-Za-z0-9_\-]{20,})/);
   if(pp&&isPanoId(pp[1]))
     return{panoId:pp[1],panoType:'user',...nav,source:'/p/ path'};
 
-  // 8. Protobuf from data=
   const dm=workUrl.match(/[?\/]data=([A-Za-z0-9+\/=%_\-]+)/);
   if(dm){
     let ds=dm[1];try{ds=decodeURIComponent(ds);}catch(e){}
@@ -443,19 +393,124 @@ function extractFromUrl(raw) {
     if(wf)return{panoId:wf,panoType:isUserPanoId(wf)?'user':'sv',...nav,source:'Earth protobuf (full)'};
   }
 
-  // 9. Coords only
   if(nav.coords)return{panoId:null,panoType:null,...nav,source:'Coordinates only'};
   return null;
 }
 
-// ─── Photo Sphere XMP injection ───
-function injectXMP(jpegBytes,w,h) {
+// ─── Binary EXIF Builder for [GPS] Block (Degrees, Minutes, Seconds) ───
+function buildBinaryExifGPS(lat, lng) {
+  if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return new Uint8Array(0);
+
+  const latRef = lat >= 0 ? 'N' : 'S';
+  const lngRef = lng >= 0 ? 'E' : 'W';
+  lat = Math.abs(lat);
+  lng = Math.abs(lng);
+
+  const latDeg = Math.floor(lat);
+  const latMin = Math.floor((lat - latDeg) * 60);
+  const latSec = Math.round((lat - latDeg - latMin / 60) * 3600 * 100);
+
+  const lngDeg = Math.floor(lng);
+  const lngMin = Math.floor((lng - lngDeg) * 60);
+  const lngSec = Math.round((lng - lngDeg - lngMin / 60) * 3600 * 100);
+
+  const exifLen = 140; 
+  const buf = new ArrayBuffer(4 + 2 + 6 + exifLen);
+  const dv = new DataView(buf);
+
+  // APP1 Marker
+  dv.setUint8(0, 0xFF); dv.setUint8(1, 0xE1);
+  dv.setUint16(2, 2 + 6 + exifLen, false); // Length (Big Endian)
+  
+  // "Exif\0\0"
+  dv.setUint8(4, 0x45); dv.setUint8(5, 0x78); dv.setUint8(6, 0x69); dv.setUint8(7, 0x66);
+  dv.setUint8(8, 0x00); dv.setUint8(9, 0x00);
+
+  const tiffOff = 10;
+  // TIFF Header (Little Endian "II")
+  dv.setUint8(tiffOff, 0x49); dv.setUint8(tiffOff + 1, 0x49);
+  dv.setUint16(tiffOff + 2, 0x002A, true); 
+  dv.setUint32(tiffOff + 4, 0x00000008, true); 
+
+  // IFD0
+  const ifd0 = tiffOff + 8;
+  dv.setUint16(ifd0, 1, true); 
+  dv.setUint16(ifd0 + 2, 0x8825, true); // Tag: GPSInfo
+  dv.setUint16(ifd0 + 4, 4, true);      // Type: LONG
+  dv.setUint32(ifd0 + 6, 1, true);      // Count: 1
+  dv.setUint32(ifd0 + 10, 26, true);    // Offset to GPS IFD
+  dv.setUint32(ifd0 + 14, 0, true);     // Next IFD
+
+  // GPS IFD
+  const gpsIfd = tiffOff + 26;
+  dv.setUint16(gpsIfd, 5, true); // 5 tags
+
+  // 0x00: GPSVersionID
+  dv.setUint16(gpsIfd + 2, 0x0000, true); dv.setUint16(gpsIfd + 4, 1, true);
+  dv.setUint32(gpsIfd + 6, 4, true); 
+  dv.setUint8(gpsIfd + 10, 2); dv.setUint8(gpsIfd + 11, 2); dv.setUint8(gpsIfd + 12, 0); dv.setUint8(gpsIfd + 13, 0);
+
+  // 0x01: GPSLatitudeRef
+  dv.setUint16(gpsIfd + 14, 0x0001, true); dv.setUint16(gpsIfd + 16, 2, true);
+  dv.setUint32(gpsIfd + 18, 2, true); 
+  dv.setUint8(gpsIfd + 22, latRef.charCodeAt(0)); dv.setUint8(gpsIfd + 23, 0);
+
+  // 0x02: GPSLatitude
+  dv.setUint16(gpsIfd + 26, 0x0002, true); dv.setUint16(gpsIfd + 28, 5, true);
+  dv.setUint32(gpsIfd + 30, 3, true); dv.setUint32(gpsIfd + 34, 92, true); // Offset 92
+
+  // 0x03: GPSLongitudeRef
+  dv.setUint16(gpsIfd + 38, 0x0003, true); dv.setUint16(gpsIfd + 40, 2, true);
+  dv.setUint32(gpsIfd + 42, 2, true); 
+  dv.setUint8(gpsIfd + 46, lngRef.charCodeAt(0)); dv.setUint8(gpsIfd + 47, 0);
+
+  // 0x04: GPSLongitude
+  dv.setUint16(gpsIfd + 50, 0x0004, true); dv.setUint16(gpsIfd + 52, 5, true);
+  dv.setUint32(gpsIfd + 54, 3, true); dv.setUint32(gpsIfd + 58, 116, true); // Offset 116
+
+  dv.setUint32(gpsIfd + 62, 0, true);
+
+  // Data
+  const latData = tiffOff + 92;
+  dv.setUint32(latData, latDeg, true); dv.setUint32(latData + 4, 1, true);
+  dv.setUint32(latData + 8, latMin, true); dv.setUint32(latData + 12, 1, true);
+  dv.setUint32(latData + 16, latSec, true); dv.setUint32(latData + 20, 100, true);
+
+  const lngData = tiffOff + 116;
+  dv.setUint32(lngData, lngDeg, true); dv.setUint32(lngData + 4, 1, true);
+  dv.setUint32(lngData + 8, lngMin, true); dv.setUint32(lngData + 12, 1, true);
+  dv.setUint32(lngData + 16, lngSec, true); dv.setUint32(lngData + 20, 100, true);
+
+  return new Uint8Array(buf);
+}
+
+function toXmpGps(dec, isLat) {
+  if (dec == null || isNaN(dec)) return null;
+  const ref = dec >= 0 ? (isLat ? 'N' : 'E') : (isLat ? 'S' : 'W');
+  const abs = Math.abs(dec);
+  const deg = Math.floor(abs);
+  const min = (abs - deg) * 60;
+  return `${deg},${min.toFixed(6)}${ref}`;
+}
+
+// ─── Inject BOTH Binary EXIF and XMP metadata ───
+function injectMetadata(jpegBytes, w, h, lat, lng) {
+  // 1. Build XMP APP1 segment
+  let xmpGpsAttrs = '';
+  if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
+    xmpGpsAttrs = 
+      '\n xmlns:exif="http://ns.adobe.com/exif/1.0/"'+
+      '\n exif:GPSLatitude="'+toXmpGps(lat, true)+'"'+
+      '\n exif:GPSLongitude="'+toXmpGps(lng, false)+'"';
+  }
+
   const xmpXml=
     '<?xpacket begin="\xEF\xBB\xBF" id="W5M0MpCehiHzreSzNTczkc9d"?>'+
     '<x:xmpmeta xmlns:x="adobe:ns:meta/">'+
     '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'+
     '<rdf:Description rdf:about=""'+
     ' xmlns:GPano="http://ns.google.com/photos/1.0/panorama/"'+
+    xmpGpsAttrs +
     ' GPano:UsePanoramaViewer="True"'+
     ' GPano:ProjectionType="equirectangular"'+
     ' GPano:PoseHeadingDegrees="0"'+
@@ -471,18 +526,36 @@ function injectXMP(jpegBytes,w,h) {
     '/>'+
     '</rdf:RDF></x:xmpmeta>'+
     '<?xpacket end="w"?>';
+    
   const ns='http://ns.adobe.com/xap/1.0/\x00';
   const full=ns+xmpXml;
-  const xb=new Uint8Array(full.length);
-  for(let i=0;i<full.length;i++)xb[i]=full.charCodeAt(i)&0xFF;
-  const mlen=xb.length+2;
-  const app1=new Uint8Array(4+xb.length);
-  app1[0]=0xFF;app1[1]=0xE1;app1[2]=(mlen>>8)&0xFF;app1[3]=mlen&0xFF;
-  app1.set(xb,4);
-  const out=new Uint8Array(2+app1.length+jpegBytes.length-2);
-  out.set(jpegBytes.slice(0,2),0);
-  out.set(app1,2);
-  out.set(jpegBytes.slice(2),2+app1.length);
+  const xmpBytes=new Uint8Array(full.length);
+  for(let i=0;i<full.length;i++) xmpBytes[i]=full.charCodeAt(i)&0xFF;
+  
+  const xmpLen=xmpBytes.length+2;
+  const xmpApp1=new Uint8Array(4+xmpBytes.length);
+  xmpApp1[0]=0xFF; xmpApp1[1]=0xE1; 
+  xmpApp1[2]=(xmpLen>>8)&0xFF; xmpApp1[3]=xmpLen&0xFF;
+  xmpApp1.set(xmpBytes,4);
+
+  // 2. Build Binary EXIF APP1 segment
+  const exifApp1 = buildBinaryExifGPS(lat, lng);
+
+  // 3. Assemble: [FF D8] + [EXIF] + [XMP] + [Rest of JPEG]
+  const out = new Uint8Array(2 + exifApp1.length + xmpApp1.length + jpegBytes.length - 2);
+  out.set(jpegBytes.slice(0,2), 0); // FF D8
+  
+  let offset = 2;
+  if (exifApp1.length > 0) {
+    out.set(exifApp1, offset);
+    offset += exifApp1.length;
+  }
+  
+  out.set(xmpApp1, offset);
+  offset += xmpApp1.length;
+  
+  out.set(jpegBytes.slice(2), offset);
+  
   return out;
 }
 
@@ -515,11 +588,9 @@ function loadImgFromBytes(bytes) {
 
 // ─── Download path A: User-uploaded (single lh3 image) ───
 async function downloadUserPano(det) {
-  const {panoId,lh3Url}=det;
+  const {panoId, lh3Url, coords}=det;
   const tryUrls=[];
   if(lh3Url)tryUrls.push({url:lh3Url,label:'direct lh3 (full-res)'});
-  // gpms-cs-s path for CIHM type IDs — these need the AF token so only work if lh3Url present
-  // Fallback to /p/ path for regular CI IDs
   tryUrls.push({url:'https://lh3.googleusercontent.com/p/'+encodeURIComponent(panoId)+'=w16000-h8000-k-no',label:'lh3/p/ max'});
   tryUrls.push({url:'https://lh3.googleusercontent.com/p/'+encodeURIComponent(panoId)+'=w8000-h4000-k-no',label:'lh3/p/ 8K'});
 
@@ -532,14 +603,17 @@ async function downloadUserPano(det) {
       const header=new TextDecoder('latin1').decode(bytes.slice(0,65536));
       const hasGPano=header.includes('GPano')||header.includes('PhotoSphere');
       const fname='earth360_user_'+panoId.slice(0,20)+'.jpg';
-      if(hasGPano){
+      
+      const geoMsg = coords ? ' + GPS Location' : '';
+      
+      if(hasGPano && !coords){
         setStatus('Original has Photo Sphere XMP — saving as-is.\n'+fname,'success');
         downloadBytes(bytes,fname,'image/jpeg');
       } else {
-        setStatus('Injecting Photo Sphere XMP…','info');
+        setStatus(`Injecting Photo Sphere XMP${geoMsg}…`,'info');
         const img=await loadImgFromBytes(bytes);
-        const xb=injectXMP(bytes,img.naturalWidth,img.naturalHeight);
-        setStatus('Saved: '+fname+'\n'+img.naturalWidth+'x'+img.naturalHeight+'px · XMP injected','success');
+        const xb=injectMetadata(bytes, img.naturalWidth, img.naturalHeight, coords?.lat, coords?.lng);
+        setStatus(`Saved: ${fname}\n${img.naturalWidth}x${img.naturalHeight}px · XMP${geoMsg} injected`,'success');
         downloadBytes(xb,fname,'image/jpeg');
       }
       return true;
@@ -548,24 +622,44 @@ async function downloadUserPano(det) {
   return false;
 }
 
+// ─── Utility: Find maximum available zoom level ───
+async function getAvailableZoom(panoId) {
+  const testZoom = async (z) => {
+    return new Promise(res => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => res(true);
+      img.onerror = () => res(false);
+      img.src = 'https://streetviewpixels-pa.googleapis.com/v1/tile?cb_client=maps_sv.tactile&panoid=' + encodeURIComponent(panoId) + '&zoom=' + z + '&x=0&y=0';
+    });
+  };
+  if (await testZoom(5)) return 5;
+  if (await testZoom(4)) return 4;
+  return 3; 
+}
+
 // ─── Download path B: Official Street View tile stitch ───
 async function downloadSVPano(det) {
-  const {panoId}=det;
-  const zoom=selectedZoom;
-  const {cols,rows}=ZOOM_DIMS[zoom];
-  const total=cols*rows;
+  const {panoId, coords}=det;
 
   document.getElementById('dlBtn').disabled=true;
   document.getElementById('cancelBtn').classList.add('active');
   document.getElementById('progressSection').classList.add('active');
-  document.getElementById('progressLabel').textContent='Fetching '+total+' tiles (Z'+zoom+')…';
+  
+  document.getElementById('progressLabel').textContent='Detecting maximum resolution...';
+  
+  const zoom = await getAvailableZoom(panoId);
+  const {cols,rows}=ZOOM_DIMS[zoom];
+  const total=cols*rows;
+
+  document.getElementById('progressLabel').textContent=`Fetching ${total} tiles (Max Z${zoom})…`;
   updateProgress(0,total);
 
   const grid=document.getElementById('tileGrid');grid.innerHTML='';
   const cells=[];
   for(let i=0;i<total;i++){const c=document.createElement('div');c.className='tile-cell';grid.appendChild(c);cells.push(c);}
 
-  setStatus('Pano: '+panoId+'\nZ'+zoom+' · '+cols+'x'+rows+' · '+cols*TILE_SIZE+'x'+rows*TILE_SIZE+'px','info');
+  setStatus(`Pano: ${panoId}\nZ${zoom} (Max) · ${cols}x${rows} · ${cols*TILE_SIZE}x${rows*TILE_SIZE}px`,'info');
 
   const canvas=document.createElement('canvas');
   canvas.width=cols*TILE_SIZE;canvas.height=rows*TILE_SIZE;
@@ -576,7 +670,9 @@ async function downloadSVPano(det) {
     while(idx<total&&!cancelRequested){
       const i=idx++;const x=i%cols,y=Math.floor(i/cols);
       cells[i].className='tile-cell loading';
-      const url='https://cbk0.google.com/cbk?output=tile&panoid='+encodeURIComponent(panoId)+'&zoom='+zoom+'&x='+x+'&y='+y;
+      
+      const url='https://streetviewpixels-pa.googleapis.com/v1/tile?cb_client=maps_sv.tactile&panoid='+encodeURIComponent(panoId)+'&zoom='+zoom+'&x='+x+'&y='+y;
+      
       const res=await new Promise(resolve=>{
         const img=new Image();img.crossOrigin='anonymous';
         img.onload=()=>resolve({ok:true,img});img.onerror=()=>resolve({ok:false});img.src=url;
@@ -595,23 +691,26 @@ async function downloadSVPano(det) {
   document.getElementById('cancelBtn').classList.remove('active');
 
   if(failed===total){
-    setStatus('All tiles failed.\n• CORS — use CORS Unblock extension or run via local server\n• Pano may be private\n• Try lower zoom','error');
+    setStatus('All tiles failed.\n• CORS — use CORS Unblock extension or run via local server\n• Pano may be private','error');
     return;
   }
 
-  setStatus('Stitching done. Injecting XMP…','success');
+  const geoMsg = coords ? ' + GPS Location' : '';
+  setStatus(`Stitching done. Injecting XMP${geoMsg}…`,'success');
+  
   const w=canvas.width,h=canvas.height;
   const fname='earth360_sv_'+panoId.slice(0,20)+'_z'+zoom+'.jpg';
   try{
     const jb=await canvasToJpegBytes(canvas,0.96);
-    const xb=injectXMP(jb,w,h);
+    // Inject both Binary EXIF and XMP
+    const xb=injectMetadata(jb, w, h, coords?.lat, coords?.lng);
     downloadBytes(xb,fname,'image/jpeg');
-    setStatus('Saved: '+fname+'\n'+w+'x'+h+'px · '+(total-failed)+'/'+total+' tiles · XMP injected','success');
+    setStatus(`Saved: ${fname}\n${w}x${h}px · ${total-failed}/${total} tiles · XMP${geoMsg} injected`,'success');
   }catch(e){
     try{
       const du=canvas.toDataURL('image/jpeg',0.96);
       const a=document.createElement('a');a.href=du;a.download=fname;a.click();
-      setStatus('Saved (CORS mode — XMP not injected).\n'+w+'x'+h+'px','warn');
+      setStatus(`Saved (CORS mode — XMP${geoMsg} not injected).\n${w}x${h}px`,'warn');
     }catch(e2){
       setStatus('Export blocked by CORS.\nRun via: npx serve .','error');
     }
@@ -619,11 +718,6 @@ async function downloadSVPano(det) {
 }
 
 // ─── UI ───
-function selectZoom(el){
-  document.querySelectorAll('.zoom-pill').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');selectedZoom=parseInt(el.dataset.zoom);
-}
-
 function setStatus(msg,type){
   const b=document.getElementById('statusBar');
   b.textContent=msg;b.className='status-bar active '+(type||'info');
@@ -655,9 +749,8 @@ function clearAll(){
   currentDetection=null;currentMapsUrl=null;
   ['badgeSV','badgeUser','badgeCoords','mapsBox','progressSection'].forEach(id=>
     document.getElementById(id).classList.remove('active'));
-  document.getElementById('zoomWrap').classList.remove('hidden');
   const btn=document.getElementById('dlBtn');
-  btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Full-Res Panorama';btn.disabled=false;
+  btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama';btn.disabled=false;
   hideStatus();
 }
 
@@ -675,7 +768,6 @@ function openInMaps(){
   if(!w)setStatus('Popup blocked — use the "Copy / Open Link" button instead.','warn');
 }
 
-// When user pastes Maps URL into Step 2 input
 function onStep2Change(){
   const val=document.getElementById('step2Input').value.trim();
   if(!val)return;
@@ -686,14 +778,13 @@ function onStep2Change(){
     setStatus('Got it! lh3 token found. Press Download to fetch the full-res image.','success');
     const btn=document.getElementById('dlBtn');
     btn.classList.add('user-mode');
-    btn.textContent='\u2B07 Download User Panorama (Full-Res)';
+    btn.textContent='\u2B07 Download User Panorama';
   } else if(result.panoId&&result.panoType==='sv'){
     currentDetection=result;
     setStatus('Official Street View pano detected from Maps URL.','info');
-    document.getElementById('zoomWrap').classList.remove('hidden');
     const btn=document.getElementById('dlBtn');
     btn.classList.remove('user-mode');
-    btn.textContent='\u2B07 Download Panorama (Tile Stitch + XMP)';
+    btn.textContent='\u2B07 Download Panorama';
   } else {
     setStatus('Pasted URL found pano ID but no direct image token yet. Try waiting for Street View to fully load in Maps before copying the URL.','warn');
   }
@@ -706,9 +797,8 @@ function onUrlChange(){
   hideStatus();currentDetection=null;currentMapsUrl=null;
 
   if(!val.trim()){
-    document.getElementById('zoomWrap').classList.remove('hidden');
     const btn=document.getElementById('dlBtn');
-    btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Full-Res Panorama';
+    btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama';
     return;
   }
 
@@ -720,9 +810,8 @@ function onUrlChange(){
     document.getElementById('svPanoId').textContent=result.panoId;
     document.getElementById('svSource').textContent='\u2937 Official Street View \xB7 '+result.source;
     document.getElementById('badgeSV').classList.add('active');
-    document.getElementById('zoomWrap').classList.remove('hidden');
     const btn=document.getElementById('dlBtn');
-    btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama (Tile Stitch + XMP)';
+    btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama';
 
   } else if(result.panoId&&result.panoType==='user'){
     currentDetection=result;
@@ -732,10 +821,8 @@ function onUrlChange(){
       '\u2937 User-uploaded 360\xB0 \xB7 '+result.source+
       (hasToken?' \xB7 \u2713 direct URL found':' \xB7 \u26A0 no AF token \u2014 use Maps step below');
     document.getElementById('badgeUser').classList.add('active');
-    document.getElementById('zoomWrap').classList.add('hidden');
     const btn=document.getElementById('dlBtn');
-    btn.classList.add('user-mode');btn.textContent='\u2B07 Download User Panorama (Full-Res)';
-    // If no lh3 token, show the Maps redirect box
+    btn.classList.add('user-mode');btn.textContent='\u2B07 Download User Panorama';
     if(!hasToken)showMapsBox(result);
 
   } else if(!result.panoId&&result.coords){
@@ -770,7 +857,6 @@ async function startDownload(){
     const ok=await downloadUserPano(currentDetection);
     document.getElementById('dlBtn').disabled=false;
     if(!ok){
-      // No lh3 token or CORS blocked — show Maps box if not already shown
       showMapsBox(currentDetection);
       setStatus(
         'Could not fetch directly.\n\n'+

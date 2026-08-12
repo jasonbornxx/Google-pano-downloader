@@ -1,127 +1,72 @@
-# Earth360 Downloader
+# 🌍 Earth360 Downloader
 
-A single-file, client-side tool for downloading full-resolution Google Street View and user-uploaded 360° panoramas with proper **Photo Sphere XMP metadata** — so they open in panorama mode in any gallery app.
+A single-file, client-side web app for downloading full-resolution 360° panoramas from Google Maps / Street View / Google Earth — no backend, no build step, just open `index.html`.
 
-**[Try it live (vercel) ](https://google-pano-downloader.vercel.app/)**
+It detects the panorama type from a pasted URL, fetches the tiles (or the direct image), stitches them together, and saves a JPEG with GPS + Photo Sphere metadata embedded.
 
-**[Try it live (github pages)](https://jasonbornxx.github.io/Google-pano-downloader/)**
+## Features
 
----
+- **Smart URL detection** — paste a Google Maps, Street View, or `earth.app.goo.gl` link and the app extracts the pano ID automatically (via `!1s`, `panoid=`, `/p/` paths, or decoded Earth protobuf `data=` blobs).
+- **Two panorama types supported:**
+  - **Official Street View** (`sv`) — tiles are fetched at the maximum available resolution (up to 8K) from `streetviewpixels-pa.googleapis.com` and stitched client-side.
+  - **User-uploaded 360° photos** (`CI...` / `AF1Q...` IDs) — fetched directly as a single full-res image from `lh3.googleusercontent.com`.
+- **Stitching modes** for official Street View panoramas:
+  - *Optimized (Default)* — fast, skips empty tile space.
+  - *Strict 2:1 Sphere* — pads missing tiles to a full 32×16 grid to prevent morphing/stretching.
+  - **"Open in Maps" fallback** — for user photos that need a signed `AF...` token, the app opens Google Maps for you, and you paste the resulting URL back in (Step 2) so the token can be extracted.
+- **Metadata injection** — embeds Photo Sphere XMP and binary EXIF GPS coordinates into the downloaded image.
+- **Live progress UI** — animated tile grid showing per-tile fetch status (loading / done / failed) plus an overall progress bar.
+- **Coordinate-only fallback** — if only lat/lng can be parsed from a link, the app offers a Google Maps link to open Street View at that location.
 
-## Why open source?
+## Getting Started
 
-Tools like this exist behind paywalls or as sketchy browser extensions. But the underlying technique — tile stitching, protobuf decoding, XMP injection — is just clever glue between endpoints that your browser already uses every time you open Google Maps. There is no secret sauce worth hiding, and keeping it open means anyone can audit exactly what it does with their data (spoiler: nothing leaves your device).
-
-Selling downloads of Google's imagery would also violate their Terms of Service. Open source keeps this honest — a personal utility, not a product.
-
----
-
-## What it does
-
-- Accepts any Google Maps, Street View, or `earth.app.goo.gl` link
-- Automatically detects whether it is an **official Street View** panorama or a **user-uploaded 360° photo**
-- Downloads the full-resolution image and saves it as a JPEG with Photo Sphere XMP metadata embedded
-- Gallery apps (Google Photos, Samsung Gallery, Windows Photos, iOS Photos) recognise the file as a 360° panorama and open it in panorama/VR mode automatically
-
----
-
-## How it works
-
-### Official Street View panoramas
-
-Google stores Street View imagery as a grid of 512x512px tiles served from `cbk0.google.com`. The app fetches all tiles concurrently, draws them onto an HTML5 canvas to stitch the full equirectangular image, converts to JPEG, then injects a Photo Sphere XMP metadata block before saving.
-
-| Zoom | Grid | Output resolution |
-|------|------|-------------------|
-| Z1 | 2x1 | ~1K |
-| Z2 | 4x2 | ~2K |
-| Z3 | 8x4 | ~4K |
-| Z4 | 16x8 | ~8K |
-| Z5 | 26x13 | ~13K x 6.6K |
-
-### User-uploaded 360 photos (CI... pano IDs)
-
-These are not tiled — Google serves them as a single pre-stitched JPEG from `lh3.googleusercontent.com`. The important detail is getting the URL right:
-
-Maps URLs often embed viewport-cropped versions with camera parameters like `-pi49.79-ya332.47-fo100` that instruct Google to serve a perspective crop (a flat screenshot of one direction) instead of the full sphere. The app strips all viewport parameters and requests `=w16000-h8000-k-no` to get the raw equirectangular source. If the original already contains `GPano` XMP (most photographer uploads do), it is preserved exactly as downloaded.
-
-### Google Earth app links (earth.app.goo.gl)
-
-Earth share links encode the panorama data as a base64-encoded protobuf binary inside the `data=` URL parameter. The app includes a minimal protobuf decoder that recursively walks the binary structure to extract the pano ID, coordinates, and heading angle — all without any server or external library.
-
-For user-uploaded panos from Earth links, the signed `AF...` token required to fetch the image is not present in the Earth link itself. It only appears after a real browser session loads Google Maps. The app handles this with a two-step flow:
-
-1. Constructs the equivalent Maps Street View URL from the extracted pano ID and coordinates, then opens it in a new tab
-2. After Maps loads, the user copies the URL from the address bar and pastes it back into the app
-3. The app extracts the `!6s` token, strips viewport params, and fetches the full-res image
-
-### Photo Sphere XMP injection
-
-For stitched Street View images, XMP metadata is written directly into the JPEG binary. The app inserts an `APP1` marker block immediately after the JPEG `SOI` header containing the `GPano` namespace:
-
-```
-GPano:ProjectionType       = equirectangular
-GPano:FullPanoWidthPixels  = {width}
-GPano:FullPanoHeightPixels = {height}
-GPano:UsePanoramaViewer    = True
-GPano:CroppedAreaLeftPixels = 0
-GPano:CroppedAreaTopPixels  = 0
-```
-
-This is the same metadata standard used by Google Street View camera rigs, Ricoh Theta, Insta360, and other 360 cameras. Any app that supports Photo Sphere (which is most modern gallery apps) will automatically detect the panorama.
-
----
-
-## Limitations
-
-**CORS** — Tile fetching requires the browser to allow cross-origin image requests from `cbk0.google.com`. If tiles fail, run the file via a local server (`npx serve .`) or use the CORS Unblock browser extension.
-
-**CIHM panos without a token** — User-uploaded panoramas that come from Earth app links require the two-step Maps URL flow because the signed AF token is session-bound and cannot be derived from the pano ID alone.
-
-**Google Terms of Service** — This tool accesses internal Google endpoints that are not part of any public API. It is intended for personal, non-commercial use only. Do not use it to scrape imagery at scale.
-
----
-
-## Running locally
-
-No build step. No dependencies. No npm install.
+Because the app fetches images cross-origin, opening `index.html` directly via `file://` may hit CORS restrictions in some browsers. Serve it locally instead:
 
 ```bash
-git clone https://github.com/yourname/earth360-downloader
-cd earth360-downloader
 npx serve .
 ```
 
-Then open `http://localhost:3000`. Running via a local server rather than opening the file directly avoids CORS issues with tile fetching.
+Then open the printed local URL (e.g. `http://localhost:3000`) in your browser.
 
----
+> If fetches still fail due to CORS, a browser extension such as *CORS Unblock* can help.
 
-## Deploying to Vercel
+## Usage
 
-```bash
-vercel deploy
-```
+1. **Paste a URL** — copy a link from Google Maps, Street View, or the Google Earth app and paste it into the Step 1 field.
+2. The app shows a badge identifying what it found:
+   - 🔵 **Official Street View** pano ID
+   - 🟣 **User-uploaded 360°** pano ID
+   - 🟡 **Coordinates only** (no pano ID) — use the "Open in Maps" link to load Street View, then copy the resulting URL
+3. For official Street View panoramas, choose a **Stitching Mode** (Optimized or Strict 2:1 Sphere).
+4. Click **Download Panorama**. Progress is shown live as tiles are fetched and stitched.
+5. If a user photo requires a signed token, use **Open in Maps**, wait for Street View to load, copy the address bar URL, and paste it into the **Step 2** field to complete the download.
 
-It is a single HTML file. Vercel serves it as a static site with zero configuration needed.
+## Supported Link Formats
 
----
+| Source | Example pattern | Notes |
+|---|---|---|
+| Google Maps Street View | `.../maps/@lat,lng,3a,...!1s<panoId>!2e0` | Pano ID extracted from `!1s` |
+| `panoid=` query param | `?panoid=<panoId>` | Direct match |
+| User photo path | `/p/<panoId>` | Treated as user-uploaded |
+| Embedded lh3 image URL | `!6shttps://lh3.googleusercontent.com/...` | Direct full-res image link |
+| Google Earth app links | `earth.app.goo.gl/...` | Decoded from an embedded protobuf blob |
+| Direct pano ID | `CAoS...`, `CI...`, `AF1Q...` | Pasted as-is |
 
-## Contributing
+## How It Works (Technical Overview)
 
-PRs welcome. Areas that would make this meaningfully better:
+- **URL parsing** — a small hand-rolled protobuf decoder (`parseProto`/`readVarint`) walks base64-encoded `data=` blobs from Google Earth links to locate an embedded pano ID string.
+- **Tile fetching** — for official Street View, tiles are requested at increasing zoom levels (up to a 26×13 grid at max zoom) and drawn onto a `<canvas>` to reconstruct the full panorama.
+- **Direct image fetch** — user-uploaded photos skip tiling entirely; the app strips size/viewport parameters from the `lh3.googleusercontent.com` URL and requests it at `w16000-h8000`.
+- **Metadata embedding** — `buildBinaryExifGPS()` constructs a binary EXIF APP1 segment with GPS IFD tags, and Photo Sphere XMP metadata is injected so the resulting JPEG is recognized by 360° photo viewers.
 
-**Browser extension port** — would eliminate the CORS wall and the manual Maps step entirely, making user-uploaded pano downloads fully automatic in one click.
+## Tech Stack
 
-**Batch mode** — accept multiple URLs and queue downloads.
+Pure HTML/CSS/JavaScript — no frameworks, no dependencies, no build tooling. Fonts are loaded from Google Fonts (`Space Mono`, `Syne`).
 
-**Heading preservation in XMP** — the initial view direction from the original link could be written into `GPano:InitialViewHeadingDegrees` so the panorama opens facing the right direction instead of defaulting to north.
+## Disclaimer
 
-**Better protobuf decoding** — the current decoder is hand-rolled and minimal. A proper proto3 implementation would handle more edge cases.
+This tool is intended for personal archival of panoramas you have the right to access and download (e.g., your own uploaded photos, or publicly viewable Street View imagery). Respect Google's Terms of Service and applicable copyright/privacy laws when using it.
 
----
+## License
 
-## Legal
-
-Released under the MIT License.
-
-The imagery downloaded using this tool belongs to Google and/or the individual photographers who contributed it and is subject to [Google's Terms of Service](https://www.google.com/intl/en/policies/terms/). This tool is intended for personal, offline, non-commercial use only. The authors take no responsibility for misuse.
+No license specified — add one (e.g. MIT) if you plan to distribute this project.

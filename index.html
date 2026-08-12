@@ -94,6 +94,18 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
   transition:border-color .2s;}
 .step2-input:focus{border-color:var(--warn);box-shadow:0 0 0 3px rgba(255,179,71,.1);}
 
+/* Stitching Mode Toggles */
+.zoom-wrap{margin-bottom:20px; transition:opacity .2s;}
+.zoom-wrap.hidden{display:none;}
+.zoom-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.zoom-pill{flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--muted);font-family:'Space Mono',monospace;
+  font-size:.7rem;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;}
+.zoom-pill:hover{border-color:var(--accent);color:var(--accent);}
+.zoom-pill.active{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);}
+.zoom-pill .res-label{display:block;font-size:.55rem;color:var(--muted);margin-top:2px;}
+.zoom-pill.active .res-label{color:rgba(0,229,255,.6);}
+
 .dl-btn{width:100%;background:var(--accent);color:#000;border:none;border-radius:10px;
   font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;padding:16px;
   cursor:pointer;transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden; margin-top:10px;}
@@ -188,6 +200,17 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
     <div id="coordsText">Only coordinates found.</div>
   </div>
 
+  <!-- Stitching Mode (Visible only for SV) -->
+  <div class="zoom-wrap hidden" id="stitchModeWrap">
+    <label class="field-label">Stitching Mode
+      <span style="color:var(--muted);font-size:.55rem">(Official Street View only)</span>
+    </label>
+    <div class="zoom-pills">
+      <button class="zoom-pill active" onclick="setStitchMode('optimized', this)">Optimized (Default)<span class="res-label">Fast, Skips Empty Space</span></button>
+      <button class="zoom-pill" onclick="setStitchMode('full', this)">Strict 2:1 Sphere<span class="res-label">Fixes Morphing (32x16 grid)</span></button>
+    </div>
+  </div>
+
   <div class="maps-box" id="mapsBox">
     <div class="maps-box-title">&#x1F517; Open in Google Maps to get download URL</div>
     <div class="maps-box-btns">
@@ -229,7 +252,8 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
   </button>
   <div class="info-body" id="infoBody">
     <span class="tag-sv">&#x25A0; Official Google Street View</span><br>
-    Tiles automatically fetched at <strong>maximum available resolution (up to 8K)</strong> from <code>streetviewpixels-pa.googleapis.com</code>, stitched, and saved with <strong>Photo Sphere XMP + Binary GPS Location</strong> injected.<br><br>
+    Tiles automatically fetched at <strong>maximum available resolution (up to 8K)</strong> from <code>streetviewpixels-pa.googleapis.com</code>, stitched, and saved with <strong>Photo Sphere XMP + Binary GPS Location</strong> injected.<br>
+    <em>Note: If images look "morphed" or stretched, switch the Stitching Mode above to "Strict 2:1 Sphere" to pad missing tiles.</em><br><br>
 
     <span class="tag-user">&#x25A0; User-uploaded 360 photos</span> (<code>CI...</code> IDs)<br>
     Fetched directly as a single full-res image from <code>lh3.googleusercontent.com</code> with ALL
@@ -250,12 +274,19 @@ textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,.1
 let cancelRequested = false;
 let currentDetection = null;
 let currentMapsUrl = null;
+let stitchMode = 'optimized'; 
 
 const ZOOM_DIMS = {
   1:{cols:2, rows:1}, 2:{cols:4, rows:2}, 3:{cols:8, rows:4},
   4:{cols:16,rows:8}, 5:{cols:26,rows:13}
 };
 const TILE_SIZE = 512;
+
+function setStitchMode(mode, el) {
+  document.querySelectorAll('#stitchModeWrap .zoom-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  stitchMode = mode;
+}
 
 // ─── Protobuf decoder ───
 function readVarint(b, p) {
@@ -397,7 +428,7 @@ function extractFromUrl(raw) {
   return null;
 }
 
-// ─── Binary EXIF Builder for [GPS] Block (Degrees, Minutes, Seconds) ───
+// ─── Binary EXIF Builder for [GPS] Block ───
 function buildBinaryExifGPS(lat, lng) {
   if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return new Uint8Array(0);
 
@@ -418,59 +449,48 @@ function buildBinaryExifGPS(lat, lng) {
   const buf = new ArrayBuffer(4 + 2 + 6 + exifLen);
   const dv = new DataView(buf);
 
-  // APP1 Marker
   dv.setUint8(0, 0xFF); dv.setUint8(1, 0xE1);
-  dv.setUint16(2, 2 + 6 + exifLen, false); // Length (Big Endian)
+  dv.setUint16(2, 2 + 6 + exifLen, false); 
   
-  // "Exif\0\0"
   dv.setUint8(4, 0x45); dv.setUint8(5, 0x78); dv.setUint8(6, 0x69); dv.setUint8(7, 0x66);
   dv.setUint8(8, 0x00); dv.setUint8(9, 0x00);
 
   const tiffOff = 10;
-  // TIFF Header (Little Endian "II")
   dv.setUint8(tiffOff, 0x49); dv.setUint8(tiffOff + 1, 0x49);
   dv.setUint16(tiffOff + 2, 0x002A, true); 
   dv.setUint32(tiffOff + 4, 0x00000008, true); 
 
-  // IFD0
   const ifd0 = tiffOff + 8;
   dv.setUint16(ifd0, 1, true); 
-  dv.setUint16(ifd0 + 2, 0x8825, true); // Tag: GPSInfo
-  dv.setUint16(ifd0 + 4, 4, true);      // Type: LONG
-  dv.setUint32(ifd0 + 6, 1, true);      // Count: 1
-  dv.setUint32(ifd0 + 10, 26, true);    // Offset to GPS IFD
-  dv.setUint32(ifd0 + 14, 0, true);     // Next IFD
+  dv.setUint16(ifd0 + 2, 0x8825, true);
+  dv.setUint16(ifd0 + 4, 4, true);      
+  dv.setUint32(ifd0 + 6, 1, true);      
+  dv.setUint32(ifd0 + 10, 26, true);    
+  dv.setUint32(ifd0 + 14, 0, true);     
 
-  // GPS IFD
   const gpsIfd = tiffOff + 26;
-  dv.setUint16(gpsIfd, 5, true); // 5 tags
+  dv.setUint16(gpsIfd, 5, true); 
 
-  // 0x00: GPSVersionID
   dv.setUint16(gpsIfd + 2, 0x0000, true); dv.setUint16(gpsIfd + 4, 1, true);
   dv.setUint32(gpsIfd + 6, 4, true); 
   dv.setUint8(gpsIfd + 10, 2); dv.setUint8(gpsIfd + 11, 2); dv.setUint8(gpsIfd + 12, 0); dv.setUint8(gpsIfd + 13, 0);
 
-  // 0x01: GPSLatitudeRef
   dv.setUint16(gpsIfd + 14, 0x0001, true); dv.setUint16(gpsIfd + 16, 2, true);
   dv.setUint32(gpsIfd + 18, 2, true); 
   dv.setUint8(gpsIfd + 22, latRef.charCodeAt(0)); dv.setUint8(gpsIfd + 23, 0);
 
-  // 0x02: GPSLatitude
   dv.setUint16(gpsIfd + 26, 0x0002, true); dv.setUint16(gpsIfd + 28, 5, true);
-  dv.setUint32(gpsIfd + 30, 3, true); dv.setUint32(gpsIfd + 34, 92, true); // Offset 92
+  dv.setUint32(gpsIfd + 30, 3, true); dv.setUint32(gpsIfd + 34, 92, true); 
 
-  // 0x03: GPSLongitudeRef
   dv.setUint16(gpsIfd + 38, 0x0003, true); dv.setUint16(gpsIfd + 40, 2, true);
   dv.setUint32(gpsIfd + 42, 2, true); 
   dv.setUint8(gpsIfd + 46, lngRef.charCodeAt(0)); dv.setUint8(gpsIfd + 47, 0);
 
-  // 0x04: GPSLongitude
   dv.setUint16(gpsIfd + 50, 0x0004, true); dv.setUint16(gpsIfd + 52, 5, true);
-  dv.setUint32(gpsIfd + 54, 3, true); dv.setUint32(gpsIfd + 58, 116, true); // Offset 116
+  dv.setUint32(gpsIfd + 54, 3, true); dv.setUint32(gpsIfd + 58, 116, true); 
 
   dv.setUint32(gpsIfd + 62, 0, true);
 
-  // Data
   const latData = tiffOff + 92;
   dv.setUint32(latData, latDeg, true); dv.setUint32(latData + 4, 1, true);
   dv.setUint32(latData + 8, latMin, true); dv.setUint32(latData + 12, 1, true);
@@ -495,7 +515,6 @@ function toXmpGps(dec, isLat) {
 
 // ─── Inject BOTH Binary EXIF and XMP metadata ───
 function injectMetadata(jpegBytes, w, h, lat, lng) {
-  // 1. Build XMP APP1 segment
   let xmpGpsAttrs = '';
   if (lat != null && lng != null && !isNaN(lat) && !isNaN(lng)) {
     xmpGpsAttrs = 
@@ -538,12 +557,10 @@ function injectMetadata(jpegBytes, w, h, lat, lng) {
   xmpApp1[2]=(xmpLen>>8)&0xFF; xmpApp1[3]=xmpLen&0xFF;
   xmpApp1.set(xmpBytes,4);
 
-  // 2. Build Binary EXIF APP1 segment
   const exifApp1 = buildBinaryExifGPS(lat, lng);
 
-  // 3. Assemble: [FF D8] + [EXIF] + [XMP] + [Rest of JPEG]
   const out = new Uint8Array(2 + exifApp1.length + xmpApp1.length + jpegBytes.length - 2);
-  out.set(jpegBytes.slice(0,2), 0); // FF D8
+  out.set(jpegBytes.slice(0,2), 0); 
   
   let offset = 2;
   if (exifApp1.length > 0) {
@@ -649,48 +666,84 @@ async function downloadSVPano(det) {
   document.getElementById('progressLabel').textContent='Detecting maximum resolution...';
   
   const zoom = await getAvailableZoom(panoId);
-  const {cols,rows}=ZOOM_DIMS[zoom];
-  const total=cols*rows;
+  
+  // Choose grid based on the selected stitching mode
+  let cols, rows;
+  if (stitchMode === 'full') {
+    cols = Math.pow(2, zoom);
+    rows = Math.pow(2, zoom - 1);
+  } else {
+    cols = ZOOM_DIMS[zoom].cols;
+    rows = ZOOM_DIMS[zoom].rows;
+  }
+  const total = cols * rows;
 
   document.getElementById('progressLabel').textContent=`Fetching ${total} tiles (Max Z${zoom})…`;
   updateProgress(0,total);
 
   const grid=document.getElementById('tileGrid');grid.innerHTML='';
   const cells=[];
-  for(let i=0;i<total;i++){const c=document.createElement('div');c.className='tile-cell';grid.appendChild(c);cells.push(c);}
+  // Don't render 512 grid cells if we are in 'full' mode, it lags the DOM. Render max 200.
+  const visualCells = Math.min(total, 150);
+  for(let i=0; i<visualCells; i++){
+    const c=document.createElement('div');
+    c.className='tile-cell';
+    grid.appendChild(c);
+    cells.push(c);
+  }
 
-  setStatus(`Pano: ${panoId}\nZ${zoom} (Max) · ${cols}x${rows} · ${cols*TILE_SIZE}x${rows*TILE_SIZE}px`,'info');
+  setStatus(`Pano: ${panoId}\nZ${zoom} (Max) · Mode: ${stitchMode}\n${cols*TILE_SIZE}x${rows*TILE_SIZE}px`,'info');
 
   const canvas=document.createElement('canvas');
-  canvas.width=cols*TILE_SIZE;canvas.height=rows*TILE_SIZE;
+  canvas.width=cols*TILE_SIZE;
+  canvas.height=rows*TILE_SIZE;
   const ctx=canvas.getContext('2d');
-  let done=0,failed=0,idx=0;
+  
+  // Fill background with black for padding (only visible in 'full' mode)
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let done=0, failed=0, idx=0;
 
   async function worker(){
-    while(idx<total&&!cancelRequested){
-      const i=idx++;const x=i%cols,y=Math.floor(i/cols);
-      cells[i].className='tile-cell loading';
+    while(idx < total && !cancelRequested){
+      const i = idx++;
+      const x = i % cols, y = Math.floor(i / cols);
+      
+      if (i < visualCells) cells[i].className = 'tile-cell loading';
       
       const url='https://streetviewpixels-pa.googleapis.com/v1/tile?cb_client=maps_sv.tactile&panoid='+encodeURIComponent(panoId)+'&zoom='+zoom+'&x='+x+'&y='+y;
       
       const res=await new Promise(resolve=>{
         const img=new Image();img.crossOrigin='anonymous';
-        img.onload=()=>resolve({ok:true,img});img.onerror=()=>resolve({ok:false});img.src=url;
+        img.onload=()=>resolve({ok:true,img});
+        img.onerror=()=>resolve({ok:false});
+        img.src=url;
       });
-      if(cancelRequested)break;
-      if(res.ok){ctx.drawImage(res.img,x*TILE_SIZE,y*TILE_SIZE,TILE_SIZE,TILE_SIZE);cells[i].className='tile-cell done';}
-      else{cells[i].className='tile-cell fail';failed++;}
-      done++;updateProgress(done,total);
-      document.getElementById('progressLabel').textContent=done+'/'+total+' tiles · '+failed+' failed';
+      
+      if(cancelRequested) break;
+      
+      if(res.ok){
+        ctx.drawImage(res.img, x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        if (i < visualCells) cells[i].className = 'tile-cell done';
+      } else {
+        if (i < visualCells) cells[i].className = 'tile-cell fail';
+        failed++;
+      }
+      
+      done++;
+      updateProgress(done,total);
+      document.getElementById('progressLabel').textContent = `${done}/${total} tiles · ${failed} missing (padded)`;
     }
   }
-  await Promise.all(Array.from({length:8},()=>worker()));
-  if(cancelRequested)return;
+  await Promise.all(Array.from({length: 8}, () => worker()));
+  if(cancelRequested) return;
 
   document.getElementById('dlBtn').disabled=false;
   document.getElementById('cancelBtn').classList.remove('active');
 
-  if(failed===total){
+  // If literally every single tile failed, it's a CORS or Private pano block.
+  if(failed === total){
     setStatus('All tiles failed.\n• CORS — use CORS Unblock extension or run via local server\n• Pano may be private','error');
     return;
   }
@@ -698,17 +751,17 @@ async function downloadSVPano(det) {
   const geoMsg = coords ? ' + GPS Location' : '';
   setStatus(`Stitching done. Injecting XMP${geoMsg}…`,'success');
   
-  const w=canvas.width,h=canvas.height;
+  const w=canvas.width, h=canvas.height;
   const fname='earth360_sv_'+panoId.slice(0,20)+'_z'+zoom+'.jpg';
   try{
-    const jb=await canvasToJpegBytes(canvas,0.96);
+    const jb=await canvasToJpegBytes(canvas, 0.96);
     // Inject both Binary EXIF and XMP
     const xb=injectMetadata(jb, w, h, coords?.lat, coords?.lng);
     downloadBytes(xb,fname,'image/jpeg');
     setStatus(`Saved: ${fname}\n${w}x${h}px · ${total-failed}/${total} tiles · XMP${geoMsg} injected`,'success');
   }catch(e){
     try{
-      const du=canvas.toDataURL('image/jpeg',0.96);
+      const du=canvas.toDataURL('image/jpeg', 0.96);
       const a=document.createElement('a');a.href=du;a.download=fname;a.click();
       setStatus(`Saved (CORS mode — XMP${geoMsg} not injected).\n${w}x${h}px`,'warn');
     }catch(e2){
@@ -749,6 +802,7 @@ function clearAll(){
   currentDetection=null;currentMapsUrl=null;
   ['badgeSV','badgeUser','badgeCoords','mapsBox','progressSection'].forEach(id=>
     document.getElementById(id).classList.remove('active'));
+  document.getElementById('stitchModeWrap').classList.add('hidden');
   const btn=document.getElementById('dlBtn');
   btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama';btn.disabled=false;
   hideStatus();
@@ -782,6 +836,7 @@ function onStep2Change(){
   } else if(result.panoId&&result.panoType==='sv'){
     currentDetection=result;
     setStatus('Official Street View pano detected from Maps URL.','info');
+    document.getElementById('stitchModeWrap').classList.remove('hidden');
     const btn=document.getElementById('dlBtn');
     btn.classList.remove('user-mode');
     btn.textContent='\u2B07 Download Panorama';
@@ -794,6 +849,7 @@ function onUrlChange(){
   const val=document.getElementById('urlInput').value;
   ['badgeSV','badgeUser','badgeCoords','mapsBox'].forEach(id=>
     document.getElementById(id).classList.remove('active'));
+  document.getElementById('stitchModeWrap').classList.add('hidden');
   hideStatus();currentDetection=null;currentMapsUrl=null;
 
   if(!val.trim()){
@@ -810,6 +866,7 @@ function onUrlChange(){
     document.getElementById('svPanoId').textContent=result.panoId;
     document.getElementById('svSource').textContent='\u2937 Official Street View \xB7 '+result.source;
     document.getElementById('badgeSV').classList.add('active');
+    document.getElementById('stitchModeWrap').classList.remove('hidden');
     const btn=document.getElementById('dlBtn');
     btn.classList.remove('user-mode');btn.textContent='\u2B07 Download Panorama';
 

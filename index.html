@@ -619,7 +619,7 @@ async function downloadUserPano(det) {
       const bytes=new Uint8Array(await resp.arrayBuffer());
       const header=new TextDecoder('latin1').decode(bytes.slice(0,65536));
       const hasGPano=header.includes('GPano')||header.includes('PhotoSphere');
-      const fname='earth360_user_'+panoId.slice(0,20)+'.jpg';
+      const fname='earth360_user_'+panoId+'.jpg';
       
       const geoMsg = coords ? ' + GPS Location' : '';
       
@@ -752,7 +752,7 @@ async function downloadSVPano(det) {
   setStatus(`Stitching done. Injecting XMP${geoMsg}…`,'success');
   
   const w=canvas.width, h=canvas.height;
-  const fname='earth360_sv_'+panoId.slice(0,20)+'_z'+zoom+'.jpg';
+  const fname='earth360_sv_'+panoId+'_z'+zoom+'.jpg';
   try{
     const jb=await canvasToJpegBytes(canvas, 0.96);
     // Inject both Binary EXIF and XMP
